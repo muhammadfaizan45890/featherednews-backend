@@ -3,7 +3,7 @@ import {
   getAllUsers,
   deleteUser,
   getDashboardStats,
-} from "../controllers/adminController.js";
+} from "../controllers/AdminController.js";
 
 const router = express.Router();
 
