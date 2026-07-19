@@ -140,6 +140,8 @@ import cors from "cors";
 import passport from "passport";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createServer } from "http"; // 👈 added
+import { Server as SocketServer } from "socket.io"; // 👈 added
 
 import connectDB from "./database/db.js";
 import userRoute from "./routes/userRoute.js";
@@ -160,7 +162,10 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ── CORS ──────────────────────────────────────────────
+// ── Create HTTP server ────────────────────────────────
+const httpServer = createServer(app);
+
+// ── CORS (same as before) ─────────────────────────────
 const allowedOrigins = [
   process.env.CLIENT_URL,
   'https://muhammadfaizan45890-featherednews-f.vercel.app',
@@ -170,7 +175,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
@@ -183,7 +187,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// ── Middleware ────────────────────────────────────────
+// ── Express middleware ────────────────────────────────
 app.use(express.json());
 app.use(passport.initialize());
 
@@ -228,15 +232,45 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ── Start ──────────────────────────────────────────────
+// ── Socket.IO ──────────────────────────────────────────
+const io = new SocketServer(httpServer, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ["GET", "POST"]
+  },
+  // If you use a custom path, uncomment:
+  // path: "/socket.io",
+});
+
+// Default namespace (optional)
+io.on("connection", (socket) => {
+  console.log("✅ New client connected:", socket.id);
+  socket.on("disconnect", () => {
+    console.log("❌ Client disconnected:", socket.id);
+  });
+});
+
+// ── Your missing namespace ────────────────────────────
+const noteApp = io.of("/note-app.users");
+noteApp.on("connection", (socket) => {
+  console.log("✅ User connected to /note-app.users:", socket.id);
+  // Add your real‑time logic here (e.g., notifications, chat, etc.)
+  socket.on("disconnect", () => {
+    console.log("❌ User disconnected from /note-app.users:", socket.id);
+  });
+});
+
+// ── Start server ──────────────────────────────────────
 const startServer = async () => {
   try {
     await connectDB();
     console.log("✅ Database connected");
     console.log(`🔧 CLIENT_URL: ${process.env.CLIENT_URL || "Not set"}`);
     console.log(`🔑 Google OAuth: ${process.env.GOOGLE_CLIENT_ID ? "Loaded ✅" : "Missing ❌"}`);
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       console.log(`🚀 Server listening on port ${PORT}`);
+      console.log(`📡 Socket.IO ready`);
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);
