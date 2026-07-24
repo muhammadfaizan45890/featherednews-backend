@@ -15,6 +15,8 @@ import commentActionsRoutes from "./routes/commentActionsRoutes.js";
 import heroRoutes from './routes/heroRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import advertiseRoutes from './routes/advertiseRoutes.js';
+import featuredRoutes from './routes/featuredRoutes.js';
+
 
 
 
@@ -64,6 +66,8 @@ app.use("/api/comments", commentActionsRoutes);   // /api/comments/:commentId/li
 app.use('/api/hero', heroRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/advertise', advertiseRoutes);
+app.use('/api/featured', featuredRoutes);
+
 
 
 
